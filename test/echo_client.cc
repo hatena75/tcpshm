@@ -41,13 +41,20 @@ public:
             string(conn.GetPtcpDir()) + "/" + conn.GetLocalName() + "_" + conn.GetRemoteName() + ".send_num";
         string recv_num_file =
             string(conn.GetPtcpDir()) + "/" + conn.GetLocalName() + "_" + conn.GetRemoteName() + ".recv_num";
+        
+        //debug
+        //cout << "senc_num_file_path: " << send_num_file << " recv_num_file_path " << recv_num_file << endl;
+
         const char* error_msg;
+        //these are main message (binary). So, queue is other.
+        //these can be loaded from some file, which may be one of methods for data recovery.
         send_num = my_mmap<int>(send_num_file.c_str(), false, &error_msg);
         recv_num = my_mmap<int>(recv_num_file.c_str(), false, &error_msg);
         if(!send_num || !recv_num) {
             cout << "System Error: " << error_msg << " syserrno: " << strerror(errno) << endl;
             return;
         }
+        //why do this take pointer?
         cout << "client started, send_num: " << *send_num << " recv_num: " << *recv_num << endl;
         if(use_shm) {
             thread shm_thr([this]() {
@@ -70,6 +77,7 @@ public:
             shm_thr.join();
         }
         else {
+            //Do TCP Communication!
             if(do_cpupin) cpupin(7);
             start_time = now();
             while(!conn.IsClosed()) {
