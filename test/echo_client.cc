@@ -77,15 +77,18 @@ public:
             shm_thr.join();
         }
         else {
-            //Do TCP Communication!
+            //TCP
             if(do_cpupin) cpupin(7);
             start_time = now();
             while(!conn.IsClosed()) {
+                //sending data is completed if PollNum() is true
+                //PollNum send message
                 if(PollNum()) {
                     stop_time = now();
                     conn.Close();
                     break;
                 }
+                //isclosed check
                 PollTcp(now());
             }
         }
@@ -118,9 +121,11 @@ private:
 
     template<class T>
     bool TrySendMsg() {
+        //T is  MsgTpl<1~4, 1~4>
         MsgHeader* header = conn.Alloc(sizeof(T));
         if(!header) return false;
         header->msg_type = T::msg_type;
+        //conbine header and payload
         T* msg = (T*)(header + 1);
         for(auto& v : msg->val) {
             // convert to configurated network byte order, don't need this if you know server is using the same endian
