@@ -138,6 +138,7 @@ public:
     }
 
     void Push() {
+        //ptcp queue
         q_->Push();
         SendPending();
     }
@@ -217,6 +218,7 @@ public:
     }
 
     // return false only if no pending data to send
+    // send message in q_
     bool SendPending() {
         if(IsClosed()) return false;
         int blk_sz;

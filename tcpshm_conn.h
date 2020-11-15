@@ -73,8 +73,10 @@ public:
     // submit the last msg from Alloc() and send out
     void Push() {
         if(shm_sendq_)
+            // common memory, it is more simple than ptcp
             shm_sendq_->Push();
         else
+            // message is in queue which conntoken have
             ptcp_conn_.Push();
     }
 

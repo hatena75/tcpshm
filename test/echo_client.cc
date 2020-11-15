@@ -127,6 +127,7 @@ private:
         header->msg_type = T::msg_type;
         //conbine header and payload
         T* msg = (T*)(header + 1);
+        //send message put in Msg val
         for(auto& v : msg->val) {
             // convert to configurated network byte order, don't need this if you know server is using the same endian
             v = Endian<ClientConf::ToLittleEndian>::Convert((*send_num)++);
