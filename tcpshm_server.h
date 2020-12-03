@@ -188,6 +188,7 @@ protected:
     }
 
     // poll tcp for serving tcp connections
+    // キュー内のメッセージを取り出す(POP)
     void PollTcp(int64_t now, int grpid) {
         auto& grp = tcp_grps_[grpid];
         // force read grp.live_cnt from memory, it could have been changed by Ctl thread
@@ -197,6 +198,7 @@ protected:
             // so some live conn could be missed, some closed one could be visited
             // even some conn could be visited twice, but those're all fine
             Connection& conn = *grp.conns[i];
+            //queue receive message from client
             MsgHeader* head = conn.TcpFront(now);
             if(head) static_cast<Derived*>(this)->OnClientMsg(conn, head);
         }

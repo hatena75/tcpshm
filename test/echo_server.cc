@@ -160,6 +160,7 @@ private:
     }
 
     // called by APP thread
+    // POPしたメッセージに対する動作
     void OnClientMsg(Connection& conn, MsgHeader* recv_header) {
         auto size = recv_header->size - sizeof(MsgHeader);
         MsgHeader* send_header = conn.Alloc(size);
@@ -167,7 +168,9 @@ private:
         send_header->msg_type = recv_header->msg_type;
         memcpy(send_header + 1, recv_header + 1, size);
         // if we call Push() before Pop(), there's a good chance Pop() is not called in case of program crash
+        //メッセージの消費分pop
         conn.Pop();
+        //echoなので特に何もせずPushしてすぐに送信する。
         conn.Push();
     }
 

@@ -165,6 +165,7 @@ public:
             return header;
         }
 
+        //キュー内のメッセージを最後まで読んでいた場合、クライアントからメッセージを受信する。
         if(int len = DoRecv()) {
             int old_writeidx = writeidx_;
             writeidx_ += len;
@@ -201,13 +202,16 @@ public:
     }
 
     // safe if IsClosed
+    // HB means Heart Beat, hbmsg is message header
     void SendHB(int64_t now) {
         now_ = now;
         if(now_ - send_time_ < Conf::HeartBeatInverval) return;
+        //キューに何か入ってれば、それを送ってHBとする
         if(q_) {
             if(SendPending()) return;
             hbmsg_.ack_seq = Endian<Conf::ToLittleEndian>::Convert(q_->MyAck());
         }
+        //キューに何も入ってなかった場合の確認
         int sent = ::send(sockfd_, &hbmsg_, sizeof(hbmsg_), MSG_NOSIGNAL);
         if(sent < 0 && errno == EAGAIN) return;
         if(sent != sizeof(MsgHeader)) { // for simplicity, we see partial sendout as error
@@ -218,7 +222,7 @@ public:
     }
 
     // return false only if no pending data to send
-    // send message in q_
+    // 処理が既に終わったメッセージを送信
     bool SendPending() {
         if(IsClosed()) return false;
         int blk_sz;
@@ -295,6 +299,7 @@ private:
         uint32_t extra_size = std::min((uint32_t)sizeof(stackbuf),
                                        readidx_ + (allow_expand ? Conf::TcpRecvBufMaxSize - recvbuf_size_ : 0));
         if(writable + extra_size == 0) return 0;
+        //メッセージの受信(read,readvはシステムコール)
         int ret;
         if(extra_size == 0){
             ret = ::read(sockfd_, &recvbuf_[writeidx_], writable);
@@ -358,6 +363,7 @@ private:
     static_assert(Conf::TcpRecvBufMaxSize >= Conf::TcpRecvBufInitSize, "Conf::TcpRecvBufMaxSize too small");
     static_assert((Conf::TcpRecvBufInitSize % 8) == 0, "Conf::TcpRecvBufInitSize must be a multiple of 8");
     static_assert((Conf::TcpRecvBufMaxSize % 8) == 0, "Conf::TcpRecvBufMaxSize must be a multiple of 8");
+    //受信用バッファ
     std::unique_ptr<char[]> recvbuf_;
     uint32_t recvbuf_size_ = 0;
     uint32_t writeidx_ = 0;

@@ -36,6 +36,8 @@ public:
     static_assert(Bytes % sizeof(MsgHeader) == 0, "Bytes must be multiple of 8");
     static const uint32_t BLK_CNT = Bytes / sizeof(MsgHeader);
 
+    //メッセージ全体の内容をblk_に保存してからそのアドレスを返す。
+    //実質送信用メッセージキューの役割をはたしている。
     MsgHeader* Alloc(uint16_t size) {
         size += sizeof(MsgHeader);
         uint32_t blk_sz = (size + sizeof(MsgHeader) - 1) / sizeof(MsgHeader);
@@ -52,6 +54,7 @@ public:
         return &header;
     }
 
+    //headerにAlloc部分を保存してから次の読み込み部分を参照する。
     void Push() {
         MsgHeader& header = blk_[write_idx_];
         uint32_t blk_sz = (header.size + sizeof(MsgHeader) - 1) / sizeof(MsgHeader);
@@ -60,11 +63,13 @@ public:
         write_idx_ += blk_sz;
     }
 
+    //メッセージの処理が終わり、かつ、まだ返信していない部分のアドレスを返す。
     MsgHeader* GetSendable(int& blk_sz) {
         blk_sz = write_idx_ - send_idx_;
         return blk_ + send_idx_;
     }
 
+    //送信後の参照ずらし
     void Sendout(int blk_sz) {
         send_idx_ += blk_sz;
     }
@@ -110,6 +115,7 @@ public:
     }
 
 private:
+    //送信用キュー
     MsgHeader blk_[BLK_CNT];
     // invariant: read_idx_ <= send_idx_ <= write_idx_
     // where send_idx_ may point to the middle of a msg
